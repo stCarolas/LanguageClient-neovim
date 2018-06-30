@@ -60,7 +60,13 @@ class RPC:
     def serve(self):
         content_length = 0
         while not self.infile.closed:
-            line = self.infile.readline().decode("UTF-8").strip()
+            try:
+                data = self.infile.readline()
+                line = data.decode("UTF-8").strip()
+            except UnicodeError:
+                msg = "Failed to decode message as UTF-8: " + str(data)
+                logger.exception(msg)
+                continue
             if line:
                 try:
                     header, value = line.split(":")
@@ -70,7 +76,13 @@ class RPC:
                     logger.error("Error while parsing header:" + header)
 
             else:
-                content = self.infile.read(content_length).decode("UTF-8")
+                try:
+                    data = self.infile.read(content_length)
+                    content = data.decode("UTF-8")
+                except UnicodeError:
+                    msg = "Failed to decode message as UTF-8: " + str(data)
+                    logger.exception(msg)
+                    continue
                 logger.debug("<= " + content)
                 try:
                     msg = json.loads(content)
